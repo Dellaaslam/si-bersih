@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Reports;
+use App\Models\reports;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -10,7 +10,7 @@ class UserReportsController extends Controller
 {
     public function index(Request $request)
 {
-    $query = Reports::where('user_id', Auth::id())->latest();
+    $query = reports::where('user_id', Auth::id())->latest();
 
     // Filter status
     if ($request->status) {
@@ -46,7 +46,7 @@ class UserReportsController extends Controller
 
         $photoPath = $request->hasFile('photo') ? $request->photo->store('reports', 'public') : null;
 
-        Reports::create([
+        reports::create([
             'user_id' => Auth::id(),
             'location' => $request->location,
             'description' => $request->description,
@@ -56,13 +56,13 @@ class UserReportsController extends Controller
         return redirect()->route('user.reports.index')->with('success', 'Laporan berhasil dikirim!');
     }
 
-    public function edit(Reports $report)
+    public function edit(reports $report)
     {
         $this->authorizeReport($report);
         return view('user.reports.edit', compact('report'));
     }
 
-    public function update(Request $request, Reports $report)
+    public function update(Request $request, reports $report)
     {
         $this->authorizeReport($report);
 
@@ -84,7 +84,7 @@ class UserReportsController extends Controller
         return redirect()->route('user.reports.index')->with('success', 'Laporan berhasil diperbarui!');
     }
 
-    public function destroy(Reports $report)
+    public function destroy(reports $report)
     {
         $this->authorizeReport($report);
 
@@ -93,7 +93,7 @@ class UserReportsController extends Controller
     }
 
     // Hanya pemilik yang bisa edit/hapus
-    private function authorizeReport(Reports $report)
+    private function authorizeReport(reports $report)
     {
         if ($report->user_id !== Auth::id()) {
             abort(403);
