@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 
 class UserPaymentController extends Controller
 {
-    // Step 1 - Pilih metode
+    // Step 1 - Pilih metode pembayaran
     public function index()
     {
         $payments = Payment::where('user_id', Auth::id())
@@ -18,93 +18,56 @@ class UserPaymentController extends Controller
         return view('user.payments.index', compact('payments'));
     }
 
-    // Step 2 - Tampilkan rekening + pilih bulan & tahun
+    // Step 2 - Simpan metode ke session, lalu redirect ke halaman confirm
     public function confirm(Request $request)
     {
-        // $request->validate([
-        //     'payment_method' => 'required',
-        // ]);
+        $request->validate([
+            'payment_method' => 'required',
+        ]);
 
-        // $rekening = [
-        //     'bank_transfer' => '1234567890 - BRI a/n SI-BERSIH',
-        //     'qris' => '08912345678 (QRIS a/n SI-BERSIH)',
-        //     'ewallet' => 'Dana: 08912345678',
-        // ];
+        // Simpan metode ke session
+        session([
+            'payment_method' => $request->payment_method
+        ]);
 
-        // $nomor = $rekening[$request->payment_method] ?? null;
-
-        // $months = [
-        //     1 => 'Januari',
-        //     2 => 'Februari',
-        //     3 => 'Maret',
-        //     4 => 'April',
-        //     5 => 'Mei',
-        //     6 => 'Juni',
-        //     7 => 'Juli',
-        //     8 => 'Agustus',
-        //     9 => 'September',
-        //     10 => 'Oktober',
-        //     11 => 'November',
-        //     12 => 'Desember',
-        // ];
-
-        // return view('user.payments.confirm', [
-        //     'method' => $request->payment_method,
-        //     'account_number' => $nomor,
-        //     'months' => $months,
-        //     'year' => date('Y')
-        // ]);
-          $request->validate([
-        'payment_method' => 'required',
-    ]);
-
-    session([
-        'payment_method' => $request->payment_method
-    ]);
-
-    return redirect()->route('user.payments.confirm.show');
+        return redirect()->route('user.payments.confirm.show');
     }
 
+    // Step 3 - Tampilkan halaman konfirmasi pembayaran
     public function showConfirm()
-{
+    {
+        // Ambil metode pembayaran dari session
+        $method = session('payment_method');
 
-      $method = session('payment_method');
+        if (!$method) {
+            return redirect()->route('user.payments.index')
+                ->with('error', 'Silakan pilih metode pembayaran terlebih dahulu.');
+        }
 
-    if (!$method) {
-        return redirect()->route('user.payments.index')
-            ->with('error', 'Silakan pilih metode pembayaran terlebih dahulu.');
+        // Daftar rekening
+        $rekening = [
+            'bank_transfer' => '1234567890 - BRI a/n SI-BERSIH',
+            'qris' => '08912345678 (QRIS a/n SI-BERSIH)',
+            'ewallet' => 'Dana: 08912345678',
+        ];
+
+        // Daftar bulan
+        $months = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret',
+            4 => 'April', 5 => 'Mei', 6 => 'Juni',
+            7 => 'Juli', 8 => 'Agustus', 9 => 'September',
+            10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+        ];
+
+        return view('user.payments.confirm', [
+            'method' => $method,
+            'account_number' => $rekening[$method] ?? null,
+            'months' => $months,
+            'year' => date('Y'),
+        ]);
     }
 
-    return view('user.payments.confirm', compact('method'));
-    // $method = session('payment_method');
-
-    // if (!$method) {
-    //     return redirect()->route('user.payments.index');
-    // }
-
-    // $rekening = [
-    //     'bank_transfer' => '1234567890 - BRI a/n SI-BERSIH',
-    //     'qris' => '08912345678 (QRIS a/n SI-BERSIH)',
-    //     'ewallet' => 'Dana: 08912345678',
-    // ];
-
-    // $months = [
-    //     1 => 'Januari', 2 => 'Februari', 3 => 'Maret',
-    //     4 => 'April', 5 => 'Mei', 6 => 'Juni',
-    //     7 => 'Juli', 8 => 'Agustus', 9 => 'September',
-    //     10 => 'Oktober', 11 => 'November', 12 => 'Desember',
-    // ];
-
-    // return view('user.payments.confirm', [
-    //     'method' => $method,
-    //     'account_number' => $rekening[$method] ?? null,
-    //     'months' => $months,
-    //     'year' => date('Y')
-    // ]);
-}
-
-
-    // Step 3 - Upload bukti
+    // Step 4 - Upload bukti pembayaran
     public function upload(Request $request)
     {
         $request->validate([
@@ -119,7 +82,7 @@ class UserPaymentController extends Controller
         Payment::create([
             'user_id' => Auth::id(),
             'method' => $request->payment_method,
-            'amount' => 40000, // misal iuran Rp 40k
+            'amount' => 40000, // Nominal iuran
             'month' => $request->month,
             'year' => $request->year,
             'proof' => $path,
